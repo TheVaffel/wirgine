@@ -128,7 +128,7 @@ mod tests {
 
                 wg_wingine_flush_events(wing);
 
-                if wg_wingine_is_key_pressed(wing, 0xFF1B) != 0 {
+                if wg_wingine_is_key_pressed(wing, 0xFF1B) != 0 { // 0xFF1B = XK_Escape
                     break;
                 }
             }
