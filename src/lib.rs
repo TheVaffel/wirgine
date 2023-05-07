@@ -3,10 +3,6 @@
 mod c_types;
 mod c_functions;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
