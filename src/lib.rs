@@ -14,8 +14,11 @@ mod tests {
 
     use libc::c_void;
 
+    use spurv_rs::shader::Shader;
+    use spurv_rs::values::{F32, Vec4};
+
     #[test]
-    fn it_works() {
+    fn triangle() {
         unsafe {
 
             let width = 800;
@@ -69,20 +72,35 @@ mod tests {
             ];
 
             let mut vertex_words = 0u32;
-            let mut fragment_words = 0u32;
+            // let mut fragment_words = 0u32;
 
             let vertex_file_name = CString::new("./vertex.spv").unwrap();
-            let fragment_file_name = CString::new("./fragment.spv").unwrap();
+
 
             let vertex_spv = wg_read_spv(vertex_file_name.as_ptr(),
                                          &mut vertex_words as *mut u32);
-            let fragment_spv = wg_read_spv(fragment_file_name.as_ptr(),
-                                           &mut fragment_words as *mut u32);
 
-            println!("Byte code lengths - vertex: {}, fragment: {}", vertex_words, fragment_words);
+            /* let fragment_file_name = CString::new("./fragment.spv").unwrap();
+            let fragment_spv = wg_read_spv(fragment_file_name.as_ptr(),
+            &mut fragment_words as *mut u32); */
+            let mut fragment_shader = Shader::new();
+            let mut color_output = fragment_shader.get_output_color();
+
+            let const0 = &F32::from(0.0);
+            let const1 = &F32::from(1.0);
+            let color = Vec4::from_elements(const1, const1, const0, const1);
+
+            *color_output = color;
+
+            let fragment_vec = fragment_shader.output_constant();
+            /* for u in &fragment_vec {
+                println!("{}", u);
+        } */
+
+            let fragment_spv = fragment_vec[..].as_ptr();
 
             let vertex_shader = wg_create_shader(wing, CShaderStage::Vertex, vertex_spv, vertex_words);
-            let fragment_shader = wg_create_shader(wing, CShaderStage::Fragment, fragment_spv, fragment_words);
+            let fragment_shader = wg_create_shader(wing, CShaderStage::Fragment, fragment_spv, fragment_vec.len() as u32);
 
             let shaders: [CShader; 2] = [
                 vertex_shader, fragment_shader
@@ -142,7 +160,7 @@ mod tests {
             wg_destroy_shader(fragment_shader);
 
             wg_free_spv(vertex_spv);
-            wg_free_spv(fragment_spv);
+            // wg_free_spv(fragment_spv);
 
             wg_destroy_uniform(camera_uniform);
 
