@@ -86,11 +86,14 @@ mod tests {
             let mut fragment_shader = Shader::new();
             let mut color_output = fragment_shader.get_output_color();
 
-            let const0 = &F32::from(0.0);
+            /* let const0 = &F32::from(0.0);
             let const1 = &F32::from(1.0);
-            let color = Vec4::from_elements(const1, const1, const0, const1);
+            let color = Vec4::from_elements(const1, const1, const0, const1); */
+            let input_color_var = fragment_shader.get_input_color();
 
-            *color_output = color;
+            let color_value = &*input_color_var;
+
+            *color_output = color_value.clone();
 
             let fragment_vec = fragment_shader.output_constant();
             /* for u in &fragment_vec {
