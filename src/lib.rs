@@ -14,7 +14,8 @@ mod tests {
 
     use libc::c_void;
 
-    use spurv_rs::shader::Shader;
+    use spurv_rs::shader::FragmentShader;
+    use spurv_rs::shader::shader::VertexShader;
     use spurv_rs::values::{F32, Vec4};
 
     #[test]
@@ -26,10 +27,16 @@ mod tests {
             let num_points = 3;
             let num_triangles = 1;
 
-            let mut position: [f32; 3 * 4] = [
+            /* let mut position: [f32; 3 * 4] = [
                 1.0, -1.0, -2.5, 1.0,
                 -1.0, -1.0, -2.5, 1.0,
                 0.0, 1.0, -2.5, 1.0,
+        ]; */
+
+            let mut position: [f32; 3 * 4] = [
+                - 1.0, -1.0, 0.0, 1.0,
+                1.0, -1.0, 0.0, 1.0,
+                0.0, 1.0, 0.0, 1.0,
             ];
 
             let mut colors: [f32; 3 * 4] = [
@@ -66,50 +73,80 @@ mod tests {
 
             let camera_uniform = wg_create_uniform(wing, 16 * size_of::<f32>() as u32);
 
-            let attrib_descs: [CVertexAttribDesc; 2] = [
+            let attrib_descs: [CVertexAttribDesc; 1] = [
                 CVertexAttribDesc::new(0, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
-                CVertexAttribDesc::new(1, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
+                // CVertexAttribDesc::new(1, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
             ];
 
-            let mut vertex_words = 0u32;
             // let mut fragment_words = 0u32;
+            let mut vertex_words = 0u32;
 
-            let vertex_file_name = CString::new("./vertex.spv").unwrap();
-
-
+            /* let vertex_file_name = CString::new("./vertex.spv").unwrap();
             let vertex_spv = wg_read_spv(vertex_file_name.as_ptr(),
-                                         &mut vertex_words as *mut u32);
+                                         &mut vertex_words as *mut u32); */
+
+            let vertex_vec = {
+                let mut vertex_shader = VertexShader::create_vertex_shader();
+
+                let input_var_0 = vertex_shader.get_input_variable_0();
+
+                let mut vertex_output = vertex_shader.get_output_position();
+
+                *vertex_output = (*input_var_0).clone(); // Vec4::from_elements(1, 0, 0, 1);
+                // *vertex_output = Vec4::from_elements(1, 0, 0, 1);
+
+                vertex_shader.compile()
+            };
+            println!("Length: {}", vertex_vec.len());
+            for u in &vertex_vec {
+                println!("{}", u);
+            }
+
+            let vertex_spv = vertex_vec[..].as_ptr();
+            vertex_words = vertex_vec.len() as u32;
+
 
             /* let fragment_file_name = CString::new("./fragment.spv").unwrap();
             let fragment_spv = wg_read_spv(fragment_file_name.as_ptr(),
             &mut fragment_words as *mut u32); */
-            let mut fragment_shader = Shader::new();
-            let mut color_output = fragment_shader.get_output_color();
+            let fragment_vec = {
+                let mut fragment_shader = FragmentShader::create_fragment_shader();
+                let mut color_output = fragment_shader.get_output_color();
 
-            /* let const0 = &F32::from(0.0);
-            let const1 = &F32::from(1.0);
-            let color = Vec4::from_elements(const1, const1, const0, const1); */
-            let input_color_var = fragment_shader.get_input_color();
+                let color = Vec4::from_elements(1, 1, 0, 1);
+                let color2 = Vec4::from_elements(0, 1, 0, 1);
 
-            let color_value = &*input_color_var;
+                let coords = &(*fragment_shader.get_frag_coords());
 
-            *color_output = color_value.clone();
+                *color_output = color;
 
-            let fragment_vec = fragment_shader.output_constant();
-            /* for u in &fragment_vec {
-                println!("{}", u);
-        } */
+                fragment_shader.if_then(&coords.swizzle2(0, 1).length().greater_than(700), |_| {
+                    *color_output = color2.clone();
+                });
+
+                fragment_shader.if_then(&coords.at(1).less_than(400), |_| {
+                    *color_output = color2.clone();
+                });
+
+                /* let input_color_var = fragment_shader.get_input_color();
+
+                let color_value = &*input_color_var;
+                 *color_output = color_value.clone(); */
+
+                // fragment_shader.output_constant()
+                fragment_shader.compile()
+            };
 
             let fragment_spv = fragment_vec[..].as_ptr();
 
-            let vertex_shader = wg_create_shader(wing, CShaderStage::Vertex, vertex_spv, vertex_words);
+            let vertex_shader = wg_create_shader(wing, CShaderStage::Vertex, vertex_spv, vertex_words as u32);
             let fragment_shader = wg_create_shader(wing, CShaderStage::Fragment, fragment_spv, fragment_vec.len() as u32);
 
             let shaders: [CShader; 2] = [
                 vertex_shader, fragment_shader
             ];
 
-            let pipeline = wg_create_pipeline(wing, 2, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            let pipeline = wg_create_pipeline(wing, 1, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
 
             let mut draw_pass_settings = CDrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;
@@ -162,7 +199,7 @@ mod tests {
             wg_destroy_shader(vertex_shader);
             wg_destroy_shader(fragment_shader);
 
-            wg_free_spv(vertex_spv);
+            // wg_free_spv(vertex_spv);
             // wg_free_spv(fragment_spv);
 
             wg_destroy_uniform(camera_uniform);

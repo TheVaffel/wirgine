@@ -10,4 +10,4 @@ build = "build.rs"
 libc = "0.2.140"
 
 [dependencies.spurv-rs]
-path = "../spurv-rs"
+path = "../spurv-rs/spurv-rs"
