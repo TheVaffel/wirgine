@@ -10,20 +10,21 @@ mod tests {
     use super::c_functions::*;
 
     use std::mem::size_of;
-    use std::ffi::CString;
+
 
     use libc::c_void;
 
     use spurv_rs::shader::FragmentShader;
     use spurv_rs::shader::shader::VertexShader;
-    use spurv_rs::values::{F32, Vec4};
+    use spurv_rs::types::Vec4T;
+    use spurv_rs::values::{Vec4};
 
     #[test]
     fn triangle() {
         unsafe {
 
-            let width = 800;
-            let height = 800;
+            let _width = 800;
+            let _height = 800;
             let num_points = 3;
             let num_triangles = 1;
 
@@ -73,9 +74,9 @@ mod tests {
 
             let camera_uniform = wg_create_uniform(wing, 16 * size_of::<f32>() as u32);
 
-            let attrib_descs: [CVertexAttribDesc; 1] = [
+            let attrib_descs: [CVertexAttribDesc; 2] = [
                 CVertexAttribDesc::new(0, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
-                // CVertexAttribDesc::new(1, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
+                CVertexAttribDesc::new(1, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
             ];
 
             // let mut fragment_words = 0u32;
@@ -88,12 +89,12 @@ mod tests {
             let vertex_vec = {
                 let mut vertex_shader = VertexShader::create_vertex_shader();
 
-                let input_var_0 = vertex_shader.get_input_variable_0();
 
                 let mut vertex_output = vertex_shader.get_output_position();
+                let mut color_output = vertex_shader.get_output::<Vec4T>(0);
 
-                *vertex_output = (*input_var_0).clone(); // Vec4::from_elements(1, 0, 0, 1);
-                // *vertex_output = Vec4::from_elements(1, 0, 0, 1);
+                *vertex_output = vertex_shader.get_input::<Vec4T>(0).load();
+                *color_output = vertex_shader.get_input::<Vec4T>(1).load();
 
                 vertex_shader.compile()
             };
@@ -111,7 +112,9 @@ mod tests {
             &mut fragment_words as *mut u32); */
             let fragment_vec = {
                 let mut fragment_shader = FragmentShader::create_fragment_shader();
-                let mut color_output = fragment_shader.get_output_color();
+
+                let input_color = fragment_shader.get_input::<Vec4T>(0);
+                let mut color_output = fragment_shader.get_output::<Vec4T>(0);
 
                 let color = Vec4::from_elements(1, 1, 0, 1);
                 let color2 = Vec4::from_elements(0, 1, 0, 1);
@@ -124,16 +127,10 @@ mod tests {
                     *color_output = color2.clone();
                 });
 
-                fragment_shader.if_then(&coords.at(1).less_than(400), |_| {
-                    *color_output = color2.clone();
+                fragment_shader.if_then(&coords.at(1).less_than(400), |shader| {
+                    *color_output = shader.get_input::<Vec4T>(0).load()
                 });
 
-                /* let input_color_var = fragment_shader.get_input_color();
-
-                let color_value = &*input_color_var;
-                 *color_output = color_value.clone(); */
-
-                // fragment_shader.output_constant()
                 fragment_shader.compile()
             };
 
@@ -146,7 +143,7 @@ mod tests {
                 vertex_shader, fragment_shader
             ];
 
-            let pipeline = wg_create_pipeline(wing, 1, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            let pipeline = wg_create_pipeline(wing, 2, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
 
             let mut draw_pass_settings = CDrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;
