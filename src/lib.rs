@@ -17,7 +17,10 @@ mod tests {
     use spurv_rs::shader::FragmentShader;
     use spurv_rs::shader::shader::VertexShader;
     use spurv_rs::types::Vec4T;
-    use spurv_rs::values::{Vec4};
+    use spurv_rs::Vec4;
+    use spurv_rs::types::matrices::Matrix4T;
+    use spurv_rs::types::structs::SingleFieldStructT;
+    use spurv_rs::values::matrix::Matrix4;
 
     #[test]
     fn triangle() {
@@ -28,16 +31,10 @@ mod tests {
             let num_points = 3;
             let num_triangles = 1;
 
-            /* let mut position: [f32; 3 * 4] = [
-                1.0, -1.0, -2.5, 1.0,
-                -1.0, -1.0, -2.5, 1.0,
-                0.0, 1.0, -2.5, 1.0,
-        ]; */
-
             let mut position: [f32; 3 * 4] = [
-                - 1.0, -1.0, 0.0, 1.0,
-                1.0, -1.0, 0.0, 1.0,
-                0.0, 1.0, 0.0, 1.0,
+                - 1.0, -1.0, -2.0, 1.0,
+                0.0, 1.0, -2.0, 1.0,
+                1.0, -1.0, -2.0, 1.0,
             ];
 
             let mut colors: [f32; 3 * 4] = [
@@ -89,11 +86,20 @@ mod tests {
             let vertex_vec = {
                 let mut vertex_shader = VertexShader::create_vertex_shader();
 
-
                 let mut vertex_output = vertex_shader.get_output_position();
                 let mut color_output = vertex_shader.get_output::<Vec4T>(0);
 
-                *vertex_output = vertex_shader.get_input::<Vec4T>(0).load();
+                let matrix_uniform = vertex_shader.get_uniform::<SingleFieldStructT<Matrix4T>>(0, 0);
+
+                /* let matrix = Matrix4::from_columns(&Vec4::from_elements(1.0, 0.0, 0.0, 0.0),
+                                                   &Vec4::from_elements(0.0, 1.0, 0.0, 0.0),
+                                                   &Vec4::from_elements(0.0, 0.0, 1.0, 0.0),
+                                                   &Vec4::from_elements(0.0, 0.0, 0.0, 1.0));
+
+                let transformed_position = vertex_shader.get_input::<Vec4T>(0).load(); */
+                let transformed_position = &matrix_uniform.get_member().load() * &vertex_shader.get_input::<Vec4T>(0).load();
+
+                *vertex_output = transformed_position;
                 *color_output = vertex_shader.get_input::<Vec4T>(1).load();
 
                 vertex_shader.compile()
@@ -166,6 +172,7 @@ mod tests {
             let on_finish_semaphore = wg_draw_pass_create_on_finish_semaphore(draw_pass);
             wg_wingine_set_present_wait_semaphores(wing, 1, [on_finish_semaphore][..].as_mut_ptr());
 
+            // column-major
             let camera_matrix: [f32; 16] = [ 1.73205, 0.0, 0.0, 0.0,
                                              0.0, -1.5396, 0.0, 0.0,
                                              0.0, 0.0, -1.0001, -1.0,
