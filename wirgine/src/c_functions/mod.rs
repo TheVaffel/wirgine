@@ -8,13 +8,13 @@ extern "C" {
     pub fn wg_create_wingine(width: u32, height: u32) -> CWingine;
     pub fn wg_create_vertex_buffer(wing: CWingine, size: u32) -> CVertexBuffer;
     pub fn wg_set_vertex_buffer(buffer: CVertexBuffer,
-                                data: *mut c_void,
+                                data: *const c_void,
                                 byte_offset: u32,
                                 byte_size: u32);
     pub fn wg_create_index_buffer(wing: CWingine,
                                   size: u32) -> CIndexBuffer;
     pub fn wg_set_index_buffer(buffer: CIndexBuffer,
-                               indices: *mut u32,
+                               indices: *const u32,
                                byte_offset: u32,
                                byte_size: u32);
 

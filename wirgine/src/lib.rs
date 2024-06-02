@@ -2,10 +2,24 @@
 
 mod c_types;
 mod c_functions;
+mod wrappers;
+mod utils;
+
+extern crate wirgine_macros;
+
+use wirgine_macros::IsReprC;
+use utils::IsReprC;
+
+#[derive(IsReprC)]
+#[repr(C)]
+struct MatrixStruct {
+    mat: [f32; 16]
+}
 
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
+    use crate::wrappers::wingine::Wingine;
 
     use super::c_functions::*;
 
@@ -22,54 +36,47 @@ mod tests {
     use spurv_rs::types::structs::SingleFieldStructT;
     use spurv_rs::values::matrix::Matrix4;
 
+    use crate::MatrixStruct;
+
     #[test]
     fn triangle() {
+
         unsafe {
 
             let _width = 800;
             let _height = 800;
-            let num_points = 3;
-            let num_triangles = 1;
+            const num_points: usize = 3;
+            const num_triangles: usize = 1;
 
-            let mut position: [f32; 3 * 4] = [
+            let position: [f32; num_points * 4] = [
                 - 1.0, -1.0, -2.0, 1.0,
                 0.0, 1.0, -2.0, 1.0,
                 1.0, -1.0, -2.0, 1.0,
             ];
 
-            let mut colors: [f32; 3 * 4] = [
+            let colors: [f32; num_points * 4] = [
                 0.0, 1.0, 0.0, 1.0,
                 1.0, 0.0, 0.0, 1.0,
                 0.0, 0.0, 1.0, 1.0,
             ];
 
-            let mut indices: [u32; 1 * 3] = [
+            let indices: [u32; num_triangles * 3] = [
                 0, 1, 2,
             ];
 
-            let wing = wg_create_wingine(800, 800);
+            let wing = Wingine::new(800, 800);
 
-            let position_buffer = wg_create_vertex_buffer(wing, (num_points * size_of::<f32>() * 4) as u32);
-            wg_set_vertex_buffer(position_buffer,
-                                 position[..].as_mut_ptr() as *mut _ as *mut c_void,
-                                 0,
-                                 (num_points * size_of::<f32>() * 4) as u32);
+            let mut position_buffer = wing.create_vertex_buffer::<f32>(num_points as u32 * 4);
+            position_buffer.set(&position[..]);
 
-            let color_buffer = wg_create_vertex_buffer(wing, (num_points * size_of::<f32>() * 4) as u32);
-            wg_set_vertex_buffer(color_buffer,
-                                 colors[..].as_mut_ptr() as *mut _ as *mut c_void,
-                                 0,
-                                 (num_points * size_of::<f32>() * 4) as u32);
+            let mut color_buffer = wing.create_vertex_buffer::<f32>(num_points as u32 * 4);
+            color_buffer.set(&colors[..]);
 
-            let vertex_buffers: [CVertexBuffer; 2] = [ position_buffer, color_buffer ];
+            let mut index_buffer = wing.create_index_buffer(num_triangles as u32 * 3);
+            index_buffer.set(&indices[..]);
 
-            let index_buffer = wg_create_index_buffer(wing, num_triangles * 3);
-            wg_set_index_buffer(index_buffer,
-                                indices[..].as_mut_ptr(),
-                                0,
-                                num_triangles * 3);
-
-            let camera_uniform = wg_create_uniform(wing, 16 * size_of::<f32>() as u32);
+            /* let camera_uniform = wg_create_uniform(wing.get_wingine(), 16 * size_of::<f32>() as u32); */
+            let camera_uniform = wing.create_uniform::<MatrixStruct>();
 
             let attrib_descs: [CVertexAttribDesc; 2] = [
                 CVertexAttribDesc::new(0, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
@@ -142,35 +149,36 @@ mod tests {
 
             let fragment_spv = fragment_vec[..].as_ptr();
 
-            let vertex_shader = wg_create_shader(wing, CShaderStage::Vertex, vertex_spv, vertex_words as u32);
-            let fragment_shader = wg_create_shader(wing, CShaderStage::Fragment, fragment_spv, fragment_vec.len() as u32);
+            let vertex_shader = wg_create_shader(wing.get_wingine(), CShaderStage::Vertex, vertex_spv, vertex_words as u32);
+            let fragment_shader = wg_create_shader(wing.get_wingine(), CShaderStage::Fragment, fragment_spv, fragment_vec.len() as u32);
 
             let shaders: [CShader; 2] = [
                 vertex_shader, fragment_shader
             ];
 
-            let pipeline = wg_create_pipeline(wing, 2, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            let pipeline = wg_create_pipeline(wing.get_wingine(), 2, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
 
             let mut draw_pass_settings = CDrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;
             draw_pass_settings.render_pass_settings.should_clear_depth = 1;
 
-            let draw_pass = wg_create_draw_pass(wing, pipeline, draw_pass_settings);
+            let draw_pass = wg_create_draw_pass(wing.get_wingine(), pipeline, draw_pass_settings);
 
             let command = wg_draw_pass_get_command(draw_pass);
 
-            let bindings: [CResourceBinding; 1] = [ CResourceBinding { binding: 0, resource: camera_uniform as *mut _ as *mut c_void} ];
+            let vertex_buffers: [CVertexBuffer; 2] = [ position_buffer.get_vertex_buffer(), color_buffer.get_vertex_buffer() ];
+            let bindings: [CResourceBinding; 1] = [ CResourceBinding { binding: 0, resource: camera_uniform.get_uniform() as *mut _ as *mut c_void} ];
 
-            wg_cmd_start_recording(command, wg_get_default_framebuffer(wing));
+            wg_cmd_start_recording(command, wg_get_default_framebuffer(wing.get_wingine()));
             wg_cmd_bind_resource_set(command, 0, 1, bindings[..].as_ptr());
-            wg_cmd_draw(command, 2, vertex_buffers[..].as_ptr(), index_buffer);
+            wg_cmd_draw(command, 2, vertex_buffers[..].as_ptr(), index_buffer.get_index_buffer());
             wg_cmd_end_recording(command);
 
-            let image_ready_semaphore = wg_wingine_create_image_ready_semaphore(wing);
+            let image_ready_semaphore = wg_wingine_create_image_ready_semaphore(wing.get_wingine());
             wg_draw_pass_set_wait_semaphores(draw_pass, 1, [image_ready_semaphore][..].as_mut_ptr());
 
             let on_finish_semaphore = wg_draw_pass_create_on_finish_semaphore(draw_pass);
-            wg_wingine_set_present_wait_semaphores(wing, 1, [on_finish_semaphore][..].as_mut_ptr());
+            wg_wingine_set_present_wait_semaphores(wing.get_wingine(), 1, [on_finish_semaphore][..].as_mut_ptr());
 
             // column-major
             let camera_matrix: [f32; 16] = [ 1.73205, 0.0, 0.0, 0.0,
@@ -178,20 +186,20 @@ mod tests {
                                              0.0, 0.0, -1.0001, -1.0,
                                              0.0, 0.0, -0.010001, 0.0 ];
 
-            while wg_wingine_is_window_open(wing) != 0 {
-                wg_uniform_set_current(camera_uniform, camera_matrix[..].as_ptr() as *const _ as *const c_void);
+            while wg_wingine_is_window_open(wing.get_wingine()) != 0 {
+                wg_uniform_set_current(camera_uniform.get_uniform(), camera_matrix[..].as_ptr() as *const _ as *const c_void);
                 wg_draw_pass_render(draw_pass);
-                wg_wingine_present(wing);
-                wg_wingine_sleep_milliseconds(wing, 40);
+                wg_wingine_present(wing.get_wingine());
+                wg_wingine_sleep_milliseconds(wing.get_wingine(), 40);
 
-                wg_wingine_flush_events(wing);
+                wg_wingine_flush_events(wing.get_wingine());
 
-                if wg_wingine_is_key_pressed(wing, 0xFF1B) != 0 { // 0xFF1B = XK_Escape
+                if wg_wingine_is_key_pressed(wing.get_wingine(), 0xFF1B) != 0 { // 0xFF1B = XK_Escape
                     break;
                 }
             }
 
-            wg_wingine_wait_idle(wing);
+            wg_wingine_wait_idle(wing.get_wingine());
 
             wg_destroy_semaphore(on_finish_semaphore);
             wg_destroy_semaphore(image_ready_semaphore);
@@ -206,12 +214,12 @@ mod tests {
             // wg_free_spv(vertex_spv);
             // wg_free_spv(fragment_spv);
 
-            wg_destroy_uniform(camera_uniform);
+            // wg_destroy_uniform(camera_uniform);
 
-            wg_destroy_vertex_buffer(position_buffer);
-            wg_destroy_vertex_buffer(color_buffer);
-            wg_destroy_index_buffer(index_buffer);
-            wg_destroy_wingine(wing);
+            // wg_destroy_vertex_buffer(position_buffer);
+            // wg_destroy_vertex_buffer(color_buffer);
+            // wg_destroy_index_buffer(index_buffer);
+            // wg_destroy_wingine(wing);
         }
     }
 }
