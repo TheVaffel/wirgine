@@ -181,13 +181,15 @@ mod tests {
             wg_wingine_set_present_wait_semaphores(wing.get_wingine(), 1, [on_finish_semaphore][..].as_mut_ptr());
 
             // column-major
-            let camera_matrix: [f32; 16] = [ 1.73205, 0.0, 0.0, 0.0,
-                                             0.0, -1.5396, 0.0, 0.0,
-                                             0.0, 0.0, -1.0001, -1.0,
-                                             0.0, 0.0, -0.010001, 0.0 ];
+            let camera_struct: MatrixStruct = MatrixStruct {
+                mat: [ 1.73205, 0.0, 0.0, 0.0,
+                       0.0, -1.5396, 0.0, 0.0,
+                       0.0, 0.0, -1.0001, -1.0,
+                       0.0, 0.0, -0.010001, 0.0 ]
+            };
 
             while wg_wingine_is_window_open(wing.get_wingine()) != 0 {
-                wg_uniform_set_current(camera_uniform.get_uniform(), camera_matrix[..].as_ptr() as *const _ as *const c_void);
+                camera_uniform.set_current(&camera_struct);
                 wg_draw_pass_render(draw_pass);
                 wg_wingine_present(wing.get_wingine());
                 wg_wingine_sleep_milliseconds(wing.get_wingine(), 40);
