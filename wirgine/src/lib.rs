@@ -19,6 +19,7 @@ struct MatrixStruct {
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
+    use crate::wrappers::vertex_attrib_desc::{ComponentType, VertexAttribDesc};
     use crate::wrappers::wingine::Wingine;
 
     use super::c_functions::*;
@@ -35,6 +36,8 @@ mod tests {
     use spurv_rs::types::matrices::Matrix4T;
     use spurv_rs::types::structs::SingleFieldStructT;
     use spurv_rs::values::matrix::Matrix4;
+
+    use core::array::from_fn;
 
     use crate::MatrixStruct;
 
@@ -75,12 +78,11 @@ mod tests {
             let mut index_buffer = wing.create_index_buffer(num_triangles as u32 * 3);
             index_buffer.set(&indices[..]);
 
-            /* let camera_uniform = wg_create_uniform(wing.get_wingine(), 16 * size_of::<f32>() as u32); */
             let camera_uniform = wing.create_uniform::<MatrixStruct>();
 
-            let attrib_descs: [CVertexAttribDesc; 2] = [
-                CVertexAttribDesc::new(0, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
-                CVertexAttribDesc::new(1, CComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
+            let attrib_descs: [VertexAttribDesc; 2] = [
+                VertexAttribDesc::new(0, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
+                VertexAttribDesc::new(1, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
             ];
 
             // let mut fragment_words = 0u32;
@@ -156,7 +158,11 @@ mod tests {
                 vertex_shader, fragment_shader
             ];
 
-            let pipeline = wg_create_pipeline(wing.get_wingine(), 2, attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            let temp_attrib_descs: [CVertexAttribDesc; 2] = [
+                attrib_descs[0].get_attrib_desc(), attrib_descs[1].get_attrib_desc()
+            ];
+
+            let pipeline = wg_create_pipeline(wing.get_wingine(), 2, temp_attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
 
             let mut draw_pass_settings = CDrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;

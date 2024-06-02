@@ -1,5 +1,6 @@
 
 #[repr(C)]
+#[derive(Clone)]
 pub enum CComponentType {
     Float32 = 0,
     Float64 = 1,
@@ -8,6 +9,7 @@ pub enum CComponentType {
 }
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct CVertexAttribDesc {
     pub binding_num: u32,
     pub component_type: CComponentType,
@@ -26,36 +28,4 @@ extern "C" {
                              num_components: u32,
                              stride_in_bytes: u32,
                              offset_in_bytes: u32);
-}
-
-impl CVertexAttribDesc {
-    pub fn new(binding_num: u32,
-           component_type: CComponentType,
-           num_components: u32,
-           stride_in_bytes: u32,
-           offset_in_bytes: u32) -> Self {
-        Self {
-            binding_num,
-            component_type,
-            num_components,
-            stride_in_bytes,
-            offset_in_bytes,
-            per_instance: 0
-        }
-    }
-
-    pub fn new_instanced(binding_num: u32,
-                     component_type: CComponentType,
-                     num_components: u32,
-                     stride_in_bytes: u32,
-                     offset_in_bytes: u32) -> Self {
-        Self {
-            binding_num,
-            component_type,
-            num_components,
-            stride_in_bytes,
-            offset_in_bytes,
-            per_instance: 1
-        }
-    }
 }
