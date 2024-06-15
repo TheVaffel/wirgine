@@ -2,7 +2,6 @@ use crate::c_types::{CVertexAttribDesc, CComponentType};
 
 pub type ComponentType = CComponentType;
 
-
 impl ComponentType {
     fn byte_size(&self) -> usize {
         match self {

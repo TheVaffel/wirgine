@@ -19,6 +19,7 @@ struct MatrixStruct {
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
+    use crate::wrappers::shader::{ShaderStage, Shader};
     use crate::wrappers::vertex_attrib_desc::{ComponentType, VertexAttribDesc};
     use crate::wrappers::wingine::Wingine;
 
@@ -118,10 +119,6 @@ mod tests {
                 println!("{}", u);
             }
 
-            let vertex_spv = vertex_vec[..].as_ptr();
-            vertex_words = vertex_vec.len() as u32;
-
-
             /* let fragment_file_name = CString::new("./fragment.spv").unwrap();
             let fragment_spv = wg_read_spv(fragment_file_name.as_ptr(),
             &mut fragment_words as *mut u32); */
@@ -149,13 +146,12 @@ mod tests {
                 fragment_shader.compile()
             };
 
-            let fragment_spv = fragment_vec[..].as_ptr();
+            let vertex_shader = wing.create_shader(ShaderStage::Vertex, &vertex_vec);
+            let fragment_shader = wing.create_shader(ShaderStage::Fragment, &fragment_vec);
 
-            let vertex_shader = wg_create_shader(wing.get_wingine(), CShaderStage::Vertex, vertex_spv, vertex_words as u32);
-            let fragment_shader = wg_create_shader(wing.get_wingine(), CShaderStage::Fragment, fragment_spv, fragment_vec.len() as u32);
 
             let shaders: [CShader; 2] = [
-                vertex_shader, fragment_shader
+                vertex_shader.get_shader(), fragment_shader.get_shader()
             ];
 
             let temp_attrib_descs: [CVertexAttribDesc; 2] = [
@@ -216,8 +212,8 @@ mod tests {
 
             wg_destroy_pipeline(pipeline);
 
-            wg_destroy_shader(vertex_shader);
-            wg_destroy_shader(fragment_shader);
+            // wg_destroy_shader(vertex_shader);
+            // wg_destroy_shader(fragment_shader);
 
             // wg_free_spv(vertex_spv);
             // wg_free_spv(fragment_spv);

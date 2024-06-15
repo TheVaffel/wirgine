@@ -1,6 +1,6 @@
-use crate::{c_types::CWingine, c_functions::{wg_create_wingine, wg_destroy_wingine, wg_create_vertex_buffer, wg_create_index_buffer, wg_create_uniform}};
+use crate::{c_types::CWingine, c_functions::{wg_create_wingine, wg_destroy_wingine, wg_create_vertex_buffer, wg_create_index_buffer, wg_create_uniform, wg_create_shader}};
 
-use super::{vertex_buffer::VertexBuffer, index_buffer::IndexBuffer, uniform::Uniform};
+use super::{vertex_buffer::VertexBuffer, index_buffer::IndexBuffer, uniform::Uniform, shader::{Shader, ShaderStage}};
 
 use crate::utils::IsReprC;
 
@@ -44,6 +44,13 @@ impl Wingine {
             Uniform::<T>::new(
                 wg_create_uniform(self.wingine, type_size as u32)
             )
+        }
+    }
+
+    pub fn create_shader(&self, shader_stage: ShaderStage, bytecode: &Vec<u32>) -> Shader {
+        let bytecode_ptr = bytecode[..].as_ptr();
+        unsafe {
+            Shader::new(wg_create_shader(self.wingine, shader_stage, bytecode_ptr, bytecode.len() as u32))
         }
     }
 
