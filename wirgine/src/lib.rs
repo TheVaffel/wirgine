@@ -154,41 +154,29 @@ mod tests {
                 &vertex_shader, &fragment_shader
             ];
 
-            /* let temp_attrib_descs: [CVertexAttribDesc; 2] = [
-                attrib_descs[0].get_attrib_desc(), attrib_descs[1].get_attrib_desc()
-            ]; */
-
-            // let pipeline = wg_create_pipeline(wing.get_wingine(), 2, temp_attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
             let pipeline = wing.create_pipeline(&attrib_descs, &shaders);
 
             let mut draw_pass_settings = DrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;
             draw_pass_settings.render_pass_settings.should_clear_depth = 1;
 
-            // let draw_pass = wg_create_draw_pass(wing.get_wingine(), pipeline.get_pipeline(), draw_pass_settings);
             let draw_pass = wing.create_draw_pass(&pipeline, draw_pass_settings);
 
-            // let command = wg_draw_pass_get_command(draw_pass.get_draw_pass());
             let command = draw_pass.get_command();
             let vertex_buffers: Vec<&dyn GenericVertexBuffer> = vec![ &position_buffer, &color_buffer ];
 
             let bindings = vec![ResourceBinding::new(0, &camera_uniform)];
-            // let bindings: [CResourceBinding; 1] = [ CResourceBinding { binding: 0, resource: camera_uniform.get_uniform() as *mut _ as *mut c_void} ];
 
-            // wg_cmd_start_recording(command, wg_get_default_framebuffer(wing.get_wingine()));
             command.start_recording(&wing.get_default_framebuffer());
-            // wg_cmd_bind_resource_set(command, 0, 1, bindings[..].as_ptr());
             command.bind_resource_set(0, &bindings);
-            // wg_cmd_draw(command, 2, vertex_buffers[..].as_ptr(), index_buffer.get_index_buffer());
             command.draw(&vertex_buffers, &index_buffer);
-            // wg_cmd_end_recording(command);
             command.end_recording();
 
-            let image_ready_semaphore = wg_wingine_create_image_ready_semaphore(wing.get_wingine());
-            wg_draw_pass_set_wait_semaphores(draw_pass.get_draw_pass(), 1, [image_ready_semaphore][..].as_mut_ptr());
+            let mut image_ready_semaphore = wing.create_image_ready_semaphore();
+            draw_pass.set_wait_semaphores(&vec![&mut image_ready_semaphore]);
 
-            let on_finish_semaphore = wg_draw_pass_create_on_finish_semaphore(draw_pass.get_draw_pass());
-            wg_wingine_set_present_wait_semaphores(wing.get_wingine(), 1, [on_finish_semaphore][..].as_mut_ptr());
+            let mut on_finish_semaphore = draw_pass.create_on_finish_semaphore();
+            wing.set_present_wait_semaphores(&vec![&mut on_finish_semaphore]);
 
             // column-major
             let camera_struct: MatrixStruct = MatrixStruct {
@@ -198,40 +186,20 @@ mod tests {
                        0.0, 0.0, -0.010001, 0.0 ]
             };
 
-            while wg_wingine_is_window_open(wing.get_wingine()) != 0 {
+            while wing.is_window_open() {
                 camera_uniform.set_current(&camera_struct);
-                wg_draw_pass_render(draw_pass.get_draw_pass());
-                wg_wingine_present(wing.get_wingine());
-                wg_wingine_sleep_milliseconds(wing.get_wingine(), 40);
+                draw_pass.render();
+                wing.present();
+                wing.sleep_milliseconds(40);
 
-                wg_wingine_flush_events(wing.get_wingine());
+                wing.flush_events();
 
-                if wg_wingine_is_key_pressed(wing.get_wingine(), 0xFF1B) != 0 { // 0xFF1B = XK_Escape
+                if wing.is_key_pressed(0xFF1B) { // 0xFF1B = XK_Escape
                     break;
                 }
             }
 
-            wg_wingine_wait_idle(wing.get_wingine());
-
-            wg_destroy_semaphore(on_finish_semaphore);
-            wg_destroy_semaphore(image_ready_semaphore);
-
-            // wg_destroy_draw_pass(draw_pass);
-
-            // wg_destroy_pipeline(pipeline);
-
-            // wg_destroy_shader(vertex_shader);
-            // wg_destroy_shader(fragment_shader);
-
-            // wg_free_spv(vertex_spv);
-            // wg_free_spv(fragment_spv);
-
-            // wg_destroy_uniform(camera_uniform);
-
-            // wg_destroy_vertex_buffer(position_buffer);
-            // wg_destroy_vertex_buffer(color_buffer);
-            // wg_destroy_index_buffer(index_buffer);
-            // wg_destroy_wingine(wing);
+            wing.wait_idle();
         }
     }
 }

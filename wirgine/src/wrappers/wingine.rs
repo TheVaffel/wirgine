@@ -1,6 +1,6 @@
-use crate::{c_types::{CWingine, CShader, CVertexAttribDesc}, c_functions::{wg_create_wingine, wg_destroy_wingine, wg_create_vertex_buffer, wg_create_index_buffer, wg_create_uniform, wg_create_shader, wg_create_pipeline, wg_create_draw_pass, wg_get_default_framebuffer}};
+use crate::{c_types::{CWingine, CShader, CVertexAttribDesc, CSemaphore, wg_draw_pass_settings_t}, c_functions::{wg_create_wingine, wg_destroy_wingine, wg_create_vertex_buffer, wg_create_index_buffer, wg_create_uniform, wg_create_shader, wg_create_pipeline, wg_create_draw_pass, wg_get_default_framebuffer, wg_wingine_create_image_ready_semaphore, wg_wingine_set_present_wait_semaphores, wg_wingine_sleep_milliseconds, wg_wingine_is_key_pressed, wg_wingine_is_window_open, wg_wingine_wait_idle, wg_wingine_present, wg_wingine_flush_events}};
 
-use super::{vertex_buffer::VertexBuffer, index_buffer::IndexBuffer, uniform::Uniform, shader::{Shader, ShaderStage}, pipeline::Pipeline, vertex_attrib_desc::VertexAttribDesc, draw_pass::{DrawPassSettings, DrawPass}, framebuffer::Framebuffer};
+use super::{vertex_buffer::VertexBuffer, index_buffer::IndexBuffer, uniform::Uniform, shader::{Shader, ShaderStage}, pipeline::Pipeline, vertex_attrib_desc::VertexAttribDesc, draw_pass::{DrawPassSettings, DrawPass}, framebuffer::Framebuffer, semaphore::Semaphore};
 
 use crate::utils::IsReprC;
 
@@ -68,9 +68,62 @@ impl Wingine {
         }
     }
 
+    pub fn create_image_ready_semaphore(&self) -> Semaphore {
+        unsafe {
+            Semaphore::new(wg_wingine_create_image_ready_semaphore(self.get_wingine()))
+        }
+    }
+
     pub fn get_default_framebuffer(&self) -> Framebuffer {
         unsafe {
             Framebuffer::new(wg_get_default_framebuffer(self.get_wingine()))
+        }
+    }
+
+    pub fn set_present_wait_semaphores(&self, semaphores: &Vec<&mut Semaphore>) -> () {
+        let mut c_semaphores: Vec<CSemaphore> = semaphores.iter().map(|semaphore| semaphore.get_semaphore()).collect();
+        unsafe {
+            wg_wingine_set_present_wait_semaphores(self.get_wingine(), c_semaphores.len() as u32, c_semaphores[..].as_mut_ptr());
+        }
+    }
+
+    pub fn present(&self) -> () {
+        unsafe {
+            wg_wingine_present(self.wingine);
+        }
+    }
+
+    pub fn sleep_milliseconds(&self, milliseconds: u32) -> () {
+        unsafe {
+            wg_wingine_sleep_milliseconds(self.wingine, 40);
+        }
+    }
+
+    pub fn flush_events(&self) -> () {
+        unsafe {
+            wg_wingine_flush_events(self.wingine);
+        }
+    }
+
+    pub fn is_window_open(&self) -> bool {
+        let val = unsafe {
+            wg_wingine_is_window_open(self.wingine)
+        };
+
+        val != 0
+    }
+
+    pub fn is_key_pressed(&self, key: u32) -> bool {
+        let val = unsafe {
+            wg_wingine_is_key_pressed(self.wingine, key)
+        };
+
+        val != 0
+    }
+
+    pub fn wait_idle(&self) -> () {
+        unsafe {
+            wg_wingine_wait_idle(self.wingine);
         }
     }
 

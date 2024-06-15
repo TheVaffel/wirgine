@@ -10,3 +10,4 @@ pub mod draw_pass;
 pub mod command;
 pub mod resource;
 pub mod framebuffer;
+pub mod semaphore;
