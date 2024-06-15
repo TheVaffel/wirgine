@@ -19,8 +19,11 @@ struct MatrixStruct {
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
+    use crate::wrappers::draw_pass::{self, DrawPassSettings};
+    use crate::wrappers::resource::ResourceBinding;
     use crate::wrappers::shader::{ShaderStage, Shader};
     use crate::wrappers::vertex_attrib_desc::{ComponentType, VertexAttribDesc};
+    use crate::wrappers::vertex_buffer::GenericVertexBuffer;
     use crate::wrappers::wingine::Wingine;
 
     use super::c_functions::*;
@@ -81,13 +84,10 @@ mod tests {
 
             let camera_uniform = wing.create_uniform::<MatrixStruct>();
 
-            let attrib_descs: [VertexAttribDesc; 2] = [
+            let attrib_descs = vec![
                 VertexAttribDesc::new(0, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
                 VertexAttribDesc::new(1, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0)
             ];
-
-            // let mut fragment_words = 0u32;
-            let mut vertex_words = 0u32;
 
             /* let vertex_file_name = CString::new("./vertex.spv").unwrap();
             let vertex_spv = wg_read_spv(vertex_file_name.as_ptr(),
@@ -150,36 +150,44 @@ mod tests {
             let fragment_shader = wing.create_shader(ShaderStage::Fragment, &fragment_vec);
 
 
-            let shaders: [CShader; 2] = [
-                vertex_shader.get_shader(), fragment_shader.get_shader()
+            let shaders = vec![
+                &vertex_shader, &fragment_shader
             ];
 
-            let temp_attrib_descs: [CVertexAttribDesc; 2] = [
+            /* let temp_attrib_descs: [CVertexAttribDesc; 2] = [
                 attrib_descs[0].get_attrib_desc(), attrib_descs[1].get_attrib_desc()
-            ];
+            ]; */
 
-            let pipeline = wg_create_pipeline(wing.get_wingine(), 2, temp_attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            // let pipeline = wg_create_pipeline(wing.get_wingine(), 2, temp_attrib_descs[..].as_ptr(), 2, shaders[..].as_ptr());
+            let pipeline = wing.create_pipeline(&attrib_descs, &shaders);
 
-            let mut draw_pass_settings = CDrawPassSettings::default();
+            let mut draw_pass_settings = DrawPassSettings::default();
             draw_pass_settings.render_pass_settings.should_clear_color = 1;
             draw_pass_settings.render_pass_settings.should_clear_depth = 1;
 
-            let draw_pass = wg_create_draw_pass(wing.get_wingine(), pipeline, draw_pass_settings);
+            // let draw_pass = wg_create_draw_pass(wing.get_wingine(), pipeline.get_pipeline(), draw_pass_settings);
+            let draw_pass = wing.create_draw_pass(&pipeline, draw_pass_settings);
 
-            let command = wg_draw_pass_get_command(draw_pass);
+            // let command = wg_draw_pass_get_command(draw_pass.get_draw_pass());
+            let command = draw_pass.get_command();
+            let vertex_buffers: Vec<&dyn GenericVertexBuffer> = vec![ &position_buffer, &color_buffer ];
 
-            let vertex_buffers: [CVertexBuffer; 2] = [ position_buffer.get_vertex_buffer(), color_buffer.get_vertex_buffer() ];
-            let bindings: [CResourceBinding; 1] = [ CResourceBinding { binding: 0, resource: camera_uniform.get_uniform() as *mut _ as *mut c_void} ];
+            let bindings = vec![ResourceBinding::new(0, &camera_uniform)];
+            // let bindings: [CResourceBinding; 1] = [ CResourceBinding { binding: 0, resource: camera_uniform.get_uniform() as *mut _ as *mut c_void} ];
 
-            wg_cmd_start_recording(command, wg_get_default_framebuffer(wing.get_wingine()));
-            wg_cmd_bind_resource_set(command, 0, 1, bindings[..].as_ptr());
-            wg_cmd_draw(command, 2, vertex_buffers[..].as_ptr(), index_buffer.get_index_buffer());
-            wg_cmd_end_recording(command);
+            // wg_cmd_start_recording(command, wg_get_default_framebuffer(wing.get_wingine()));
+            command.start_recording(&wing.get_default_framebuffer());
+            // wg_cmd_bind_resource_set(command, 0, 1, bindings[..].as_ptr());
+            command.bind_resource_set(0, &bindings);
+            // wg_cmd_draw(command, 2, vertex_buffers[..].as_ptr(), index_buffer.get_index_buffer());
+            command.draw(&vertex_buffers, &index_buffer);
+            // wg_cmd_end_recording(command);
+            command.end_recording();
 
             let image_ready_semaphore = wg_wingine_create_image_ready_semaphore(wing.get_wingine());
-            wg_draw_pass_set_wait_semaphores(draw_pass, 1, [image_ready_semaphore][..].as_mut_ptr());
+            wg_draw_pass_set_wait_semaphores(draw_pass.get_draw_pass(), 1, [image_ready_semaphore][..].as_mut_ptr());
 
-            let on_finish_semaphore = wg_draw_pass_create_on_finish_semaphore(draw_pass);
+            let on_finish_semaphore = wg_draw_pass_create_on_finish_semaphore(draw_pass.get_draw_pass());
             wg_wingine_set_present_wait_semaphores(wing.get_wingine(), 1, [on_finish_semaphore][..].as_mut_ptr());
 
             // column-major
@@ -192,7 +200,7 @@ mod tests {
 
             while wg_wingine_is_window_open(wing.get_wingine()) != 0 {
                 camera_uniform.set_current(&camera_struct);
-                wg_draw_pass_render(draw_pass);
+                wg_draw_pass_render(draw_pass.get_draw_pass());
                 wg_wingine_present(wing.get_wingine());
                 wg_wingine_sleep_milliseconds(wing.get_wingine(), 40);
 
@@ -208,9 +216,9 @@ mod tests {
             wg_destroy_semaphore(on_finish_semaphore);
             wg_destroy_semaphore(image_ready_semaphore);
 
-            wg_destroy_draw_pass(draw_pass);
+            // wg_destroy_draw_pass(draw_pass);
 
-            wg_destroy_pipeline(pipeline);
+            // wg_destroy_pipeline(pipeline);
 
             // wg_destroy_shader(vertex_shader);
             // wg_destroy_shader(fragment_shader);

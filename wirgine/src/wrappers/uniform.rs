@@ -6,6 +6,8 @@ use crate::utils::IsReprC;
 
 use libc::c_void;
 
+use super::resource::Resource;
+
 pub struct Uniform<T: IsReprC> {
     uniform: CUniform,
     _data: PhantomData<T>
@@ -27,6 +29,12 @@ impl<T: IsReprC> Uniform<T> {
 
     pub fn get_uniform(&self) -> CUniform {
         self.uniform
+    }
+}
+
+impl<T: IsReprC> Resource for Uniform<T> {
+    fn get_ptr(&self) -> *mut c_void {
+        self.get_uniform() as *mut _ as *mut c_void
     }
 }
 

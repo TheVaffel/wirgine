@@ -46,3 +46,13 @@ impl<T> Drop for VertexBuffer<T> {
         unsafe { wg_destroy_vertex_buffer(self.vertex_buffer) };
     }
 }
+
+pub trait GenericVertexBuffer {
+    fn get_vertex_buffer(&self) -> CVertexBuffer;
+}
+
+impl<T> GenericVertexBuffer for VertexBuffer<T> {
+    fn get_vertex_buffer(&self) -> CVertexBuffer {
+        self.get_vertex_buffer()
+    }
+}
