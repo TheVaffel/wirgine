@@ -10,6 +10,9 @@ pub trait Resource {
 
 impl ResourceBinding {
     pub fn new<ResourceType: Resource>(binding: u32, resource: &ResourceType) -> Self {
-        Self { binding, resource: resource.get_ptr() }
+        Self {
+            binding,
+            resource: resource.get_ptr(),
+        }
     }
 }

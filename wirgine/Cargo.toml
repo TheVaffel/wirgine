@@ -8,12 +8,11 @@ build = "build.rs"
 
 [dependencies]
 libc = "0.2.140"
+num = "0.4.1"
+image = "0.25.1"
 
 [dependencies.spurv-rs]
 path = "../../spurv-rs/spurv-rs"
-
-[dependencies.spurv-rs-macros]
-path = "../../spurv-rs/spurv-rs-macros"
 
 [dependencies.wirgine-macros]
 path = "../wirgine-macros"

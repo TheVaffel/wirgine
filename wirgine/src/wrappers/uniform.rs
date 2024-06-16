@@ -1,4 +1,7 @@
-use crate::{c_types::CUniform, c_functions::{wg_destroy_uniform, wg_uniform_set_current}};
+use crate::{
+    c_functions::{wg_destroy_uniform, wg_uniform_set_current},
+    c_types::CUniform,
+};
 
 use std::marker::PhantomData;
 
@@ -10,14 +13,14 @@ use super::resource::Resource;
 
 pub struct Uniform<T: IsReprC> {
     uniform: CUniform,
-    _data: PhantomData<T>
+    _data: PhantomData<T>,
 }
 
 impl<T: IsReprC> Uniform<T> {
     pub fn new(uniform: CUniform) -> Self {
         Uniform::<T> {
             uniform,
-            _data: PhantomData
+            _data: PhantomData,
         }
     }
 

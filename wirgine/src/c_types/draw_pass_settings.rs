@@ -6,12 +6,12 @@ pub struct CCommandRenderPassSettings {
     pub should_clear_depth: u8,
     pub finalize_as_texture: u8,
     pub clear_depth: f32,
-    pub clear_color: [f32; 4]
+    pub clear_color: [f32; 4],
 }
 
 #[repr(C)]
 pub struct CDrawPassSettings {
-    pub render_pass_settings: CCommandRenderPassSettings
+    pub render_pass_settings: CCommandRenderPassSettings,
 }
 
 impl CDrawPassSettings {
@@ -24,8 +24,8 @@ impl CDrawPassSettings {
                 should_clear_depth: 1,
                 finalize_as_texture: 0,
                 clear_depth: 1.0,
-                clear_color: [0.8, 0.8, 0.8, 1.0]
-            }
+                clear_color: [0.8, 0.8, 0.8, 1.0],
+            },
         }
     }
 }

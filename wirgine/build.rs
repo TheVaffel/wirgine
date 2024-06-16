@@ -1,8 +1,9 @@
-fn main () {
+fn main() {
     println!(r"cargo:rustc-link-search=../Wingine/wingine_c/build");
     println!(r"cargo:rustc-link-search=../Wingine/build");
     println!(r"cargo:rustc-link-search=../HConLib/lib");
     println!(r"cargo:rustc-link-search=../flawed/lib");
+    println!(r"cargo:rustc-link-search=/home/haakon/External/VulkanSDK/1.3.239.0/x86_64/lib");
 
     println!(r"cargo:rustc-link-lib=Wingine");
     println!(r"cargo:rustc-link-lib=Winval");

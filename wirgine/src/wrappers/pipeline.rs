@@ -1,16 +1,14 @@
-use crate::{c_types::CPipeline, c_functions::wg_destroy_pipeline};
+use crate::{c_functions::wg_destroy_pipeline, c_types::CPipeline};
 
-use super::{vertex_attrib_desc::VertexAttribDesc, shader::Shader};
+use super::{shader::Shader, vertex_attrib_desc::VertexAttribDesc};
 
 pub struct Pipeline {
-    pipeline: CPipeline
+    pipeline: CPipeline,
 }
 
 impl Pipeline {
     pub fn new(pipeline: CPipeline) -> Self {
-        Pipeline {
-            pipeline
-        }
+        Pipeline { pipeline }
     }
 
     pub fn get_pipeline(&self) -> CPipeline {

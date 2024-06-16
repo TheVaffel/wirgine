@@ -1,15 +1,12 @@
-use crate::{c_types::CSemaphore, c_functions::wg_destroy_semaphore};
+use crate::{c_functions::wg_destroy_semaphore, c_types::CSemaphore};
 
 pub struct Semaphore {
-    semaphore: CSemaphore
+    semaphore: CSemaphore,
 }
-
 
 impl Semaphore {
     pub fn new(semaphore: CSemaphore) -> Self {
-        Semaphore {
-            semaphore
-        }
+        Semaphore { semaphore }
     }
 
     pub fn get_semaphore(&self) -> CSemaphore {

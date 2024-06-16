@@ -1,8 +1,7 @@
-
 // IsReprC + autoderivation
-use proc_macro2 as p2;
-use proc_macro::TokenStream;
 use core::iter::IntoIterator;
+use proc_macro::TokenStream;
+use proc_macro2 as p2;
 
 use quote::quote;
 
@@ -10,8 +9,8 @@ use quote::quote;
 pub fn is_repr_c_derive(input: TokenStream) -> TokenStream {
     let ast: syn::DeriveInput = syn::parse(input.clone()).unwrap();
     let has_repr_c = ast.attrs.iter().any(|attr: &syn::Attribute| {
-        if  attr.style != syn::AttrStyle::Outer {
-            return false
+        if attr.style != syn::AttrStyle::Outer {
+            return false;
         }
 
         if let syn::Meta::List(meta_list) = &attr.meta {
@@ -25,7 +24,6 @@ pub fn is_repr_c_derive(input: TokenStream) -> TokenStream {
             if let p2::TokenTree::Ident(repr_type) = &token_list[0] {
                 return repr_type.to_string() == "C" && is_repr;
             }
-
         }
 
         false

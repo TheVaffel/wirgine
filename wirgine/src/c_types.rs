@@ -1,9 +1,8 @@
-
 mod attrib_desc;
 mod draw_pass_settings;
 mod resource_binding;
 
-pub use attrib_desc::{CVertexAttribDesc,CComponentType};
+pub use attrib_desc::{CComponentType, CVertexAttribDesc};
 pub use draw_pass_settings::CDrawPassSettings;
 pub use resource_binding::CResourceBinding;
 
@@ -11,6 +10,7 @@ pub use resource_binding::CResourceBinding;
  * Imported types
  */
 extern "C" {
+    pub type win_winval_t;
     pub type wg_wingine_t;
     pub type wg_vertex_buffer_t;
     pub type wg_index_buffer_t;
@@ -30,12 +30,13 @@ extern "C" {
 pub enum CShaderStage {
     Vertex = 0,
     Fragment = 1,
-    Compute = 2
+    Compute = 2,
 }
 
 /*
  * Rustified types
  */
+pub type CWinval = *mut win_winval_t;
 pub type CWingine = *mut wg_wingine_t;
 pub type CVertexBuffer = *mut wg_vertex_buffer_t;
 pub type CIndexBuffer = *mut wg_index_buffer_t;

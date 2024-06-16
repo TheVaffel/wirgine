@@ -1,4 +1,7 @@
-use crate::{c_types::{CShader, CShaderStage}, c_functions::wg_destroy_shader};
+use crate::{
+    c_functions::wg_destroy_shader,
+    c_types::{CShader, CShaderStage},
+};
 
 pub type ShaderStage = CShaderStage;
 
@@ -8,9 +11,7 @@ pub struct Shader {
 
 impl Shader {
     pub fn new(shader: CShader) -> Self {
-        Shader {
-            shader
-        }
+        Shader { shader }
     }
 
     pub fn get_shader(&self) -> CShader {
@@ -24,5 +25,4 @@ impl Drop for Shader {
             wg_destroy_shader(self.shader);
         }
     }
-
 }
