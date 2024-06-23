@@ -23,6 +23,8 @@ struct MatrixStruct {
 #[cfg(test)]
 mod tests {
     use crate::c_types::*;
+    use crate::test_utils::image::Image;
+    use crate::test_utils::image_test::create_or_compare_images;
     use crate::wrappers::draw_pass::{self, DrawPassSettings};
     use crate::wrappers::resource::ResourceBinding;
     use crate::wrappers::shader::{Shader, ShaderStage};
@@ -45,6 +47,7 @@ mod tests {
     use spurv_rs::values::matrix::Matrix4;
     use spurv_rs::Vec4;
 
+    use std::fmt::format;
     use std::path::Path;
 
     use core::array::from_fn;
@@ -53,8 +56,8 @@ mod tests {
 
     #[test]
     fn triangle() {
-        let width = 800;
-        let height = 800;
+        let width = 200;
+        let height = 200;
         const NUM_POINTS: usize = 3;
         const NUM_TRIANGLES: usize = 1;
 
@@ -134,11 +137,11 @@ mod tests {
 
             *color_output = color;
 
-            fragment_shader.if_then(&coords.swizzle2(0, 1).length().greater_than(700), |_| {
+            /* fragment_shader.if_then(&coords.swizzle2(0, 1).length().greater_than(width * 7 / 8), |_| {
                 *color_output = color2.clone();
-            });
+            }); */
 
-            fragment_shader.if_then(&coords.at(1).less_than(400), |shader| {
+            fragment_shader.if_then(&coords.at(1).less_than(width / 2), |shader| {
                 *color_output = shader.get_input::<Vec4T>(0).load()
             });
 
@@ -184,32 +187,43 @@ mod tests {
 
         // while win.is_window_open() {
 
-        camera_uniform.set_current(&camera_struct);
+        let images: Vec<Image<u32>> = (0..3).map(|_i| {
 
-        draw_pass.render();
-        wing.present();
+            camera_uniform.set_current(&camera_struct);
 
-        let mut output_image = wing.get_last_rendered_image();
-        output_image.rgb_shuffle();
-        println!("Image data: {:?}", output_image.data_ptr());
-        let result = image::save_buffer(
-            &Path::new("output_image.png"),
+            draw_pass.render();
+            wing.present();
+
+            let output_image = wing.get_last_rendered_image();
+            // output_image.rgb_shuffle();
+            // println!("Image data: {:?}", output_image.data_ptr());
+
+            /* let result = output_image.write_image(
+                &Path::new(&format!("output_image{}.png", i))); */
+            /* let result = image::save_buffer(
+            &Path::new(&format!("output_image{}.png", i)),
             output_image.data_slice(),
             width,
             height,
             image::ExtendedColorType::Rgba8,
-        );
+        );*/
+            output_image
+        }).collect();
 
-        result.expect("Couldn't save image");
+        let result = create_or_compare_images("simple_test", &images);
+
+        if let Err(_) = result {
+            panic!("Test did not succeed");
+        }
 
         /*     win.sleep_milliseconds(40);
 
-            win.flush_events();
+        win.flush_events();
 
-            if win.is_key_pressed(0xFF1B) { // 0xFF1B = XK_Escape
-                break;
-            }
-        } */
+        if win.is_key_pressed(0xFF1B) { // 0xFF1B = XK_Escape
+        break;
+    }
+    } */
 
         println!("Out of loop");
 

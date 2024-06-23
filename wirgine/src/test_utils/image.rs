@@ -1,9 +1,13 @@
+use image::ImageResult;
 use num::traits::Zero;
 
 use std::mem::size_of;
 use std::ptr::from_mut;
 use std::slice::from_raw_parts;
 
+use std::path::Path;
+
+#[derive(Clone)]
 pub struct Image<PixelType: Zero + Copy> {
     width: u32,
     height: u32,
@@ -23,7 +27,7 @@ impl<PixelType: Zero + Copy> Image<PixelType> {
         self.data[..].as_mut_ptr() as *mut u8
     }
 
-    pub fn data_slice(&mut self) -> &[u8] {
+    pub fn data_slice(&self) -> &[u8] {
         let type_size = size_of::<PixelType>();
         unsafe {
             from_raw_parts(
@@ -32,15 +36,25 @@ impl<PixelType: Zero + Copy> Image<PixelType> {
             )
         }
     }
+
+    pub fn write_image(&self, output_path: &Path) -> ImageResult<()> {
+        image::save_buffer(
+            output_path,
+            self.data_slice(),
+            self.width,
+            self.height,
+            image::ExtendedColorType::Rgba8,
+        )
+    }
 }
 
 impl Image<u32> {
     pub fn rgb_shuffle(&mut self) -> () {
-        unsafe {
-            for x in 0..self.width {
-                for y in 0..self.height {
-                    let pixel = (from_mut(&mut self.data[(y * self.width + x) as usize]) as *mut _
-                        as *mut [u8; 4]);
+        for x in 0..self.width {
+            for y in 0..self.height {
+                unsafe {
+                    let pixel = from_mut(&mut self.data[(y * self.width + x) as usize]) as *mut _
+                        as *mut [u8; 4];
                     let r = (*pixel)[0];
                     let b = (*pixel)[2];
                     (*pixel)[0] = b;
