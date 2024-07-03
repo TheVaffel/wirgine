@@ -9,8 +9,6 @@ mod test_utils;
 
 extern crate wirgine_macros;
 
-extern crate image;
-
 use utils::IsReprC;
 use wirgine_macros::IsReprC;
 
@@ -25,6 +23,9 @@ mod tests {
     use crate::c_types::*;
     use crate::test_utils::image::Image;
     use crate::test_utils::image_test::create_or_compare_images;
+    use crate::test_utils::render_controller::{
+        RenderController, RenderControllerTrait, TestRenderController, WindowRenderController,
+    };
     use crate::wrappers::draw_pass::{self, DrawPassSettings};
     use crate::wrappers::resource::ResourceBinding;
     use crate::wrappers::shader::{Shader, ShaderStage};
@@ -49,6 +50,7 @@ mod tests {
 
     use std::fmt::format;
     use std::path::Path;
+    use std::rc::Rc;
 
     use core::array::from_fn;
 
@@ -56,8 +58,10 @@ mod tests {
 
     #[test]
     fn triangle() {
-        let width = 200;
-        let height = 200;
+        let mut render_controller = RenderController::WindowController(
+            WindowRenderController::new(&String::from("simple_test")),
+        );
+
         const NUM_POINTS: usize = 3;
         const NUM_TRIANGLES: usize = 1;
 
@@ -70,9 +74,7 @@ mod tests {
 
         let indices: [u32; NUM_TRIANGLES * 3] = [0, 1, 2];
 
-        // let win = Winval::new(width, height);
-        // let wing = Wingine::with_winval(&win, "test app");
-        let wing = Wingine::new_headless(width, height, "headless test app");
+        let wing = render_controller.get_wing();
 
         let mut position_buffer = wing.create_vertex_buffer::<f32>(NUM_POINTS as u32 * 4);
         position_buffer.set(&position[..]);
@@ -89,10 +91,6 @@ mod tests {
             VertexAttribDesc::new(0, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
             VertexAttribDesc::new(1, ComponentType::Float32, 4, 4 * size_of::<f32>() as u32, 0),
         ];
-
-        /* let vertex_file_name = CString::new("./vertex.spv").unwrap();
-        let vertex_spv = wg_read_spv(vertex_file_name.as_ptr(),
-        &mut vertex_words as *mut u32); */
 
         let vertex_vec = {
             let mut vertex_shader = VertexShader::create_vertex_shader();
@@ -120,14 +118,9 @@ mod tests {
         for u in &vertex_vec {
             println!("{}", u);
         }
-
-        /* let fragment_file_name = CString::new("./fragment.spv").unwrap();
-        let fragment_spv = wg_read_spv(fragment_file_name.as_ptr(),
-        &mut fragment_words as *mut u32); */
         let fragment_vec = {
             let mut fragment_shader = FragmentShader::create_fragment_shader();
 
-            let input_color = fragment_shader.get_input::<Vec4T>(0);
             let mut color_output = fragment_shader.get_output::<Vec4T>(0);
 
             let color = Vec4::from_elements(1, 1, 0, 1);
@@ -137,16 +130,25 @@ mod tests {
 
             *color_output = color;
 
-            /* fragment_shader.if_then(&coords.swizzle2(0, 1).length().greater_than(width * 7 / 8), |_| {
-                *color_output = color2.clone();
-            }); */
+            fragment_shader.if_then(
+                &coords
+                    .swizzle2(0, 1)
+                    .length()
+                    .greater_than(render_controller.get_width() * 7 / 8),
+                |_| {
+                    *color_output = color2.clone();
+                },
+            );
 
-            fragment_shader.if_then(&coords.at(1).less_than(width / 2), |shader| {
-                *color_output = shader.get_input::<Vec4T>(0).load()
-            });
+            fragment_shader.if_then(
+                &coords.at(1).less_than(render_controller.get_width() / 2),
+                |shader| *color_output = shader.get_input::<Vec4T>(0).load(),
+            );
 
             fragment_shader.compile()
         };
+
+        let wing = render_controller.get_wing();
 
         let vertex_shader = wing.create_shader(ShaderStage::Vertex, &vertex_vec);
         let fragment_shader = wing.create_shader(ShaderStage::Fragment, &fragment_vec);
@@ -187,46 +189,11 @@ mod tests {
 
         // while win.is_window_open() {
 
-        let images: Vec<Image<u32>> = (0..3).map(|_i| {
-
+        render_controller.render_loop(&mut |wing: &mut Wingine| {
             camera_uniform.set_current(&camera_struct);
 
             draw_pass.render();
             wing.present();
-
-            let output_image = wing.get_last_rendered_image();
-            // output_image.rgb_shuffle();
-            // println!("Image data: {:?}", output_image.data_ptr());
-
-            /* let result = output_image.write_image(
-                &Path::new(&format!("output_image{}.png", i))); */
-            /* let result = image::save_buffer(
-            &Path::new(&format!("output_image{}.png", i)),
-            output_image.data_slice(),
-            width,
-            height,
-            image::ExtendedColorType::Rgba8,
-        );*/
-            output_image
-        }).collect();
-
-        let result = create_or_compare_images("simple_test", &images);
-
-        if let Err(_) = result {
-            panic!("Test did not succeed");
-        }
-
-        /*     win.sleep_milliseconds(40);
-
-        win.flush_events();
-
-        if win.is_key_pressed(0xFF1B) { // 0xFF1B = XK_Escape
-        break;
-    }
-    } */
-
-        println!("Out of loop");
-
-        wing.wait_idle();
+        });
     }
 }
