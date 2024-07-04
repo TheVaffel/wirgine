@@ -2,6 +2,8 @@ use crate::wrappers::{wingine::Wingine, winval::Winval};
 
 use super::{image::Image, image_test::create_or_compare_images};
 
+use std::env;
+
 pub type RenderFunctionType = fn(&mut Wingine) -> ();
 
 pub trait RenderControllerTrait {
@@ -153,5 +155,15 @@ impl RenderControllerTrait for TestRenderController {
 
     fn get_height(&self) -> u32 {
         self.height
+    }
+}
+
+pub fn create_render_controller(name: &String) -> RenderController {
+    let run_windowed = env::var("WINDOWED").is_ok();
+
+    if run_windowed {
+        return RenderController::WindowController(WindowRenderController::new(name));
+    } else {
+        return RenderController::TestController(TestRenderController::new(name));
     }
 }

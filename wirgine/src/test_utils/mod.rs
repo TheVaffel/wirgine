@@ -7,3 +7,6 @@ pub mod log;
 
 #[cfg(test)]
 pub mod render_controller;
+
+#[cfg(test)]
+pub mod shaders;
