@@ -60,22 +60,22 @@ impl Wingine {
         }
     }
 
-    pub fn create_vertex_buffer<T>(&self, num_elements: u32) -> VertexBuffer<T> {
+    pub fn create_vertex_buffer<T>(&self, num_elements: usize) -> VertexBuffer<T> {
         let type_size = size_of::<T>();
         unsafe {
             VertexBuffer::<T>::new(wg_create_vertex_buffer(
                 self.wingine,
-                num_elements * type_size as u32,
+                (num_elements * type_size) as u32,
             ))
         }
     }
 
-    pub fn create_index_buffer(&self, num_elements: u32) -> IndexBuffer {
+    pub fn create_index_buffer(&self, num_elements: usize) -> IndexBuffer {
         let type_size = size_of::<u32>();
         unsafe {
             IndexBuffer::new(wg_create_index_buffer(
                 self.wingine,
-                num_elements * type_size as u32,
+                (num_elements * type_size) as u32,
             ))
         }
     }
@@ -171,9 +171,7 @@ impl Wingine {
             let width = wg_wingine_get_window_width(self.wingine) as u32;
             let height = wg_wingine_get_window_height(self.wingine) as u32;
             let mut image = Image::<u32>::new(width, height);
-            println!("Calling copy_last_rendered...");
             wg_wingine_copy_last_rendered_image(self.wingine, image.data_ptr() as *mut u32);
-            println!("Done calling it!");
             image
         }
     }

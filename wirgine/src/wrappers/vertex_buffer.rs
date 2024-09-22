@@ -3,8 +3,6 @@ use crate::{
     c_types::CVertexBuffer,
 };
 
-use super::wingine::Wingine;
-
 use libc::c_void;
 
 use std::marker::PhantomData;

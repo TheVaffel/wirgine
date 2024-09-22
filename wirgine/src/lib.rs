@@ -5,14 +5,16 @@ mod c_types;
 mod utils;
 mod wrappers;
 
+pub use wrappers::*;
+
 mod test_utils;
 
 extern crate wirgine_macros;
 
-use utils::IsReprC;
-use wirgine_macros::IsReprC;
+pub use utils::IsReprC;
+pub use wirgine_macros::IsReprC as IsReprCMacro;
 
-#[derive(IsReprC)]
+#[derive(IsReprCMacro)]
 #[repr(C)]
 struct MatrixStruct {
     mat: [f32; 16],
@@ -51,13 +53,13 @@ mod tests {
 
         let wing = render_controller.get_wing();
 
-        let mut position_buffer = wing.create_vertex_buffer::<f32>(NUM_POINTS as u32 * 4);
+        let mut position_buffer = wing.create_vertex_buffer::<f32>(NUM_POINTS * 4);
         position_buffer.set(&position[..]);
 
-        let mut color_buffer = wing.create_vertex_buffer::<f32>(NUM_POINTS as u32 * 4);
+        let mut color_buffer = wing.create_vertex_buffer::<f32>(NUM_POINTS * 4);
         color_buffer.set(&colors[..]);
 
-        let mut index_buffer = wing.create_index_buffer(NUM_TRIANGLES as u32 * 3);
+        let mut index_buffer = wing.create_index_buffer(NUM_TRIANGLES * 3);
         index_buffer.set(&indices[..]);
 
         let camera_uniform = wing.create_uniform::<MatrixStruct>();
@@ -84,11 +86,11 @@ mod tests {
 
         let vertex_buffers: Vec<&dyn GenericVertexBuffer> = vec![&position_buffer, &color_buffer];
 
-        let bindings = vec![ResourceBinding::new(0, &camera_uniform)];
+        let resource_set = vec![ResourceBinding::new(0, &camera_uniform)];
 
         let command = draw_pass.get_command();
         command.start_recording(&wing.get_default_framebuffer());
-        command.bind_resource_set(0, &bindings);
+        command.bind_resource_set(0, &resource_set);
         command.draw(&vertex_buffers, &index_buffer);
         command.end_recording();
 
