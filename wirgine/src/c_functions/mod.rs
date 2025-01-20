@@ -9,7 +9,17 @@ extern "C" {
 
     pub fn wg_create_wingine_headless(width: u32, height: u32, app_name: *const c_char)
         -> CWingine;
+
     pub fn wg_create_wingine_with_winval(win: CWinval, app_name: *const c_char) -> CWingine;
+
+    pub fn wg_create_wingine_with_handles(
+        width: u32,
+        height: u32,
+        handle_0: *const c_void, // In X: Window, in Windows: HINSTANCE
+        handle_1: *const c_void, // In X: Display, in Windows: HWND
+        app_name: *const c_char,
+    ) -> CWingine;
+
     pub fn wg_create_vertex_buffer(wing: CWingine, size: u32) -> CVertexBuffer;
     pub fn wg_set_vertex_buffer(
         buffer: CVertexBuffer,
