@@ -9,7 +9,17 @@ extern "C" {
 
     pub fn wg_create_wingine_headless(width: u32, height: u32, app_name: *const c_char)
         -> CWingine;
+
     pub fn wg_create_wingine_with_winval(win: CWinval, app_name: *const c_char) -> CWingine;
+
+    pub fn wg_create_wingine_with_handles(
+        width: u32,
+        height: u32,
+        handle_0: *const c_void, // In X: Window, in Windows: HINSTANCE
+        handle_1: *const c_void, // In X: Display, in Windows: HWND
+        app_name: *const c_char,
+    ) -> CWingine;
+
     pub fn wg_create_vertex_buffer(wing: CWingine, size: u32) -> CVertexBuffer;
     pub fn wg_set_vertex_buffer(
         buffer: CVertexBuffer,
@@ -21,8 +31,8 @@ extern "C" {
     pub fn wg_set_index_buffer(
         buffer: CIndexBuffer,
         indices: *const u32,
-        byte_offset: u32,
-        byte_size: u32,
+        index_offset: u32,
+        index_count: u32,
     );
 
     pub fn wg_create_uniform(wing: CWingine, size: u32) -> CUniform;
@@ -68,7 +78,6 @@ extern "C" {
     );
     pub fn wg_cmd_end_recording(command: CCommand);
 
-    pub fn wg_wingine_create_image_ready_semaphore(wing: CWingine) -> CSemaphore;
     pub fn wg_draw_pass_set_wait_semaphores(
         draw_pass: CDrawPass,
         num_semaphores: u32,

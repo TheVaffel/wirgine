@@ -94,9 +94,6 @@ mod tests {
         command.draw(&vertex_buffers, &index_buffer);
         command.end_recording();
 
-        let mut image_ready_semaphore = wing.create_image_ready_semaphore();
-        draw_pass.set_wait_semaphores(&vec![&mut image_ready_semaphore]);
-
         let mut on_finish_semaphore = draw_pass.create_on_finish_semaphore();
         wing.set_present_wait_semaphores(&vec![&mut on_finish_semaphore]);
 

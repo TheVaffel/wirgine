@@ -2,14 +2,12 @@ use crate::{
     c_functions::{
         wg_create_draw_pass, wg_create_index_buffer, wg_create_pipeline, wg_create_shader,
         wg_create_uniform, wg_create_vertex_buffer, wg_create_wingine_headless,
-        wg_create_wingine_with_winval, wg_destroy_wingine, wg_get_default_framebuffer,
-        wg_wingine_copy_last_rendered_image, wg_wingine_create_image_ready_semaphore,
-        wg_wingine_flush_events, wg_wingine_get_window_height, wg_wingine_get_window_width,
-        wg_wingine_is_key_pressed, wg_wingine_is_window_open, wg_wingine_present,
-        wg_wingine_set_present_wait_semaphores, wg_wingine_sleep_milliseconds,
-        wg_wingine_wait_idle,
+        wg_create_wingine_with_handles, wg_create_wingine_with_winval, wg_destroy_wingine,
+        wg_get_default_framebuffer, wg_wingine_copy_last_rendered_image,
+        wg_wingine_get_window_height, wg_wingine_get_window_width, wg_wingine_present,
+        wg_wingine_set_present_wait_semaphores, wg_wingine_wait_idle,
     },
-    c_types::{wg_draw_pass_settings_t, CSemaphore, CShader, CVertexAttribDesc, CWingine},
+    c_types::{CSemaphore, CShader, CVertexAttribDesc, CWingine},
     test_utils::image::Image,
 };
 
@@ -27,9 +25,8 @@ use super::{
 };
 
 use crate::utils::IsReprC;
-use std::ffi::CString;
+use std::ffi::{c_void, CString};
 
-use std::marker::PhantomData;
 use std::mem::size_of;
 
 pub struct Wingine {
@@ -54,6 +51,26 @@ impl Wingine {
             Self {
                 wingine: wg_create_wingine_with_winval(
                     winval.get_winval(),
+                    CString::new(app_name).expect("Invalid app name").as_ptr(),
+                ),
+            }
+        }
+    }
+
+    pub fn with_handles(
+        width: u32,
+        height: u32,
+        handle_0: *const (), // In X: Window, in Windows: HINSTANCE
+        handle_1: *const (), // In X: Display, in Windows: HWND
+        app_name: &str,
+    ) -> Self {
+        unsafe {
+            Self {
+                wingine: wg_create_wingine_with_handles(
+                    width,
+                    height,
+                    handle_0 as *const c_void,
+                    handle_1 as *const c_void,
                     CString::new(app_name).expect("Invalid app name").as_ptr(),
                 ),
             }
@@ -130,10 +147,6 @@ impl Wingine {
                 draw_pass_settings,
             ))
         }
-    }
-
-    pub fn create_image_ready_semaphore(&self) -> Semaphore {
-        unsafe { Semaphore::new(wg_wingine_create_image_ready_semaphore(self.get_wingine())) }
     }
 
     pub fn get_default_framebuffer(&self) -> Framebuffer {
