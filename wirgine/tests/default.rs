@@ -78,8 +78,6 @@ fn triangle() {
     command.bind_resource_set(0, &resource_set);
     command.draw(&vertex_buffers, &index_buffer);
     command.end_recording();
-    let mut on_finish_semaphore = draw_pass.create_on_finish_semaphore();
-    wing.set_present_wait_semaphores(&vec![&mut on_finish_semaphore]);
 
     // column-major
     let camera_struct = MatrixStruct {
