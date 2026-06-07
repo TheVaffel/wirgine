@@ -67,17 +67,6 @@ fn mandelbrot() -> () {
         fragment_shader.compile()
     };
 
-    {
-        let file_name = "mandelbrot.spv";
-        let mut file = File::create(file_name).unwrap();
-
-        let len = 4 * fragment_vec.len();
-        let ptr = fragment_vec[..].as_ptr() as *const u8;
-        let byte_array = unsafe { std::slice::from_raw_parts(ptr, len) };
-        file.write_all(&byte_array).unwrap();
-        println!("Wrote SPV to {}", file_name);
-    }
-
     let shader = render_controller
         .get_wing()
         .create_shader(ShaderStage::Fragment, &fragment_vec);
