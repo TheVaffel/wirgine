@@ -1,9 +1,7 @@
-use spurv_rs::{shader::FragmentShader, types::Vec4T, Vec4};
 #[cfg(test)]
 #[test]
-fn mandelbrot() -> () {
-    use std::fs::File;
-    use std::io::Write;
+fn test2() -> () {
+    use spurv_rs::{shader::FragmentShader, types::Vec4T, Vec4};
 
     use test_utils::{
         render_controller::{create_render_controller, RenderControllerTrait},
@@ -11,7 +9,7 @@ fn mandelbrot() -> () {
     };
     use wirgine::shader::ShaderStage;
 
-    let mut render_controller = create_render_controller(&String::from("Mandelbrot"));
+    let mut render_controller = create_render_controller(&String::from("test2"));
     let width = render_controller.get_width();
     let height = render_controller.get_height();
 
@@ -30,12 +28,12 @@ fn mandelbrot() -> () {
 
         let zoom_middle = 1.0 / (2 * zoom_level) as f32;
 
-        let normalized = Vec2::from_elements(
+        let starting_point = Vec2::from_elements(
             &(&(&coords.at(0) / ((width * zoom_level) as f32)) - (zoom_middle + center_x)),
             &(&(&coords.at(1) / ((height * zoom_level) as f32)) - (zoom_middle + center_y)),
         );
 
-        let current_point0 = fragment_shader.create_local(&normalized);
+        let current_point0 = fragment_shader.create_local(&starting_point);
         let mut current_point1 = current_point0.clone();
         let iteration0 = fragment_shader.create_local(0.0);
         let mut iteration1 = iteration0.clone();
@@ -48,7 +46,7 @@ fn mandelbrot() -> () {
                 let p = &*current_point1;
                 let x = &(&p.at(0) * &p.at(0)) - &(&p.at(1) * &p.at(1));
                 let y = &(&p.at(0) * &p.at(1)) * 2.0;
-                *current_point1 = &Vec2::from_elements(&x, &y) + &normalized;
+                *current_point1 = &Vec2::from_elements(&x, &y) + &starting_point;
                 *iteration1 = &*iteration1 + 1.0;
             },
         );
