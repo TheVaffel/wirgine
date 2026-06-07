@@ -1,12 +1,9 @@
-pub mod image;
-
-#[cfg(test)]
 pub mod image_test;
 
 pub mod log;
 
-#[cfg(test)]
 pub mod render_controller;
 
-#[cfg(test)]
 pub mod shaders;
+
+pub mod test_fragment;

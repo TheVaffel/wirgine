@@ -8,7 +8,7 @@ use crate::{
         wg_wingine_set_present_wait_semaphores, wg_wingine_wait_idle,
     },
     c_types::{CSemaphore, CShader, CVertexAttribDesc, CWingine},
-    test_utils::image::Image,
+    utils::image::Image,
 };
 
 use super::{
@@ -187,6 +187,14 @@ impl Wingine {
             wg_wingine_copy_last_rendered_image(self.wingine, image.data_ptr() as *mut u32);
             image
         }
+    }
+
+    pub fn get_window_width(&self) -> u32 {
+        unsafe { wg_wingine_get_window_width(self.wingine) }
+    }
+
+    pub fn get_window_height(&self) -> u32 {
+        unsafe { wg_wingine_get_window_height(self.wingine) }
     }
 
     pub fn get_wingine(&self) -> CWingine {

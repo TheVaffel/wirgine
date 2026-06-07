@@ -4,7 +4,7 @@ use spurv_rs::{
     Vec4,
 };
 
-use crate::wrappers::{
+use wirgine::{
     shader::{Shader, ShaderStage},
     wingine::Wingine,
 };

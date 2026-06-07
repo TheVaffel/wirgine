@@ -1,14 +1,16 @@
-
-use super::image::Image;
 use super::log::Log;
 
+use wirgine::Image;
 
 use image_compare::{self, Similarity};
 use std::path::Path;
 
 const SIMILARITY_THRESHOLD: f64 = 0.98;
 
-pub fn create_or_compare_images(test_name: &str, rendered_images: &Vec<Image<u32>>) -> Result<(), ()>{
+pub fn create_or_compare_images(
+    test_name: &str,
+    rendered_images: &Vec<Image<u32>>,
+) -> Result<(), ()> {
     for i in 0..rendered_images.len() {
         let mut image_copy = rendered_images[i].clone();
         image_copy.rgb_shuffle();
@@ -16,7 +18,10 @@ pub fn create_or_compare_images(test_name: &str, rendered_images: &Vec<Image<u32
         let original_path = format!("{}{}{}.png", image_dir, test_name, i);
         let image_path = Path::new(&original_path);
         if !image_path.exists() {
-            Log::info(&format!("Could not find image {}, creating it", &original_path));
+            Log::info(&format!(
+                "Could not find image {}, creating it",
+                &original_path
+            ));
             return write_new_image(&image_path, &image_copy);
         }
 
@@ -31,16 +36,17 @@ pub fn create_or_compare_images(test_name: &str, rendered_images: &Vec<Image<u32
         let similarity = compare_images(&image_path, &new_path);
 
         if similarity.score < SIMILARITY_THRESHOLD {
-
             let deviation_path_name = format!("{}{}_deviation{}.png", image_dir, test_name, i);
             let deviation_path = Path::new(&deviation_path_name);
-            Log::fail(&format!("Images were not equal, score was {}, threshold is {}, writing deviation to {}",
-                               similarity.score,
-                               SIMILARITY_THRESHOLD,
-                               get_name(&deviation_path)));
+            Log::fail(&format!(
+                "Images were not equal, score was {}, threshold is {}, writing deviation to {}",
+                similarity.score,
+                SIMILARITY_THRESHOLD,
+                get_name(&deviation_path)
+            ));
 
-            let _ =  write_deviation_image(&similarity, &deviation_path);
-            return Err(())
+            let _ = write_deviation_image(&similarity, &deviation_path);
+            return Err(());
         }
     }
 
@@ -52,10 +58,18 @@ fn get_name(path: &Path) -> &str {
 }
 
 fn compare_images(path0: &Path, path1: &Path) -> Similarity {
-    let old_image = image::open(&path0).expect("Found original image, but could not read").to_rgb8();
-    let new_image = image::open(&path1).expect("Could not read image that I just wrote (should never happen)").to_rgb8();
+    let old_image = image::open(&path0)
+        .expect("Found original image, but could not read")
+        .to_rgb8();
+    let new_image = image::open(&path1)
+        .expect("Could not read image that I just wrote (should never happen)")
+        .to_rgb8();
 
-    let compare_result = image_compare::rgb_similarity_structure(&image_compare::Algorithm::MSSIMSimple, &old_image, &new_image);
+    let compare_result = image_compare::rgb_similarity_structure(
+        &image_compare::Algorithm::MSSIMSimple,
+        &old_image,
+        &new_image,
+    );
 
     return compare_result.expect("Could not compare images");
 }
@@ -73,12 +87,14 @@ fn write_new_image(image_path: &Path, image: &Image<u32>) -> Result<(), ()> {
 }
 
 fn write_deviation_image(similarity: &Similarity, path: &Path) -> Result<(), ()> {
-
     let deviation_image = similarity.image.to_color_map();
     let write_result = deviation_image.save(&path);
     if let Err(_) = write_result {
-        Log::fail(&format!("Could not write deviation image {}", get_name(&path)))
+        Log::fail(&format!(
+            "Could not write deviation image {}",
+            get_name(&path)
+        ))
     }
 
-    return Err(())
+    return Err(());
 }

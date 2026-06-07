@@ -1,0 +1,14 @@
+[package]
+name = "test_utils"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+"wirgine" = { path = "../../" }
+
+image = "0.25.1"
+image-compare = "0.4.1"
+colored = "2.1.0"
+
+[dependencies.spurv-rs]
+path = "../../../../spurv-rs/spurv-rs"

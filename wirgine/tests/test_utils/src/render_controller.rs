@@ -1,6 +1,6 @@
-use crate::wrappers::{wingine::Wingine, winval::Winval};
+use wirgine::{wingine::Wingine, winval::Winval, Image};
 
-use super::{image::Image, image_test::create_or_compare_images};
+use super::image_test::create_or_compare_images;
 
 use std::env;
 
@@ -100,11 +100,11 @@ impl RenderControllerTrait for WindowRenderController {
     }
 
     fn get_width(&self) -> u32 {
-        self.width
+        self.wing.get_window_width()
     }
 
     fn get_height(&self) -> u32 {
-        self.height
+        self.wing.get_window_height()
     }
 }
 
